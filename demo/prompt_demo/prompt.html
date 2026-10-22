@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 프롬프트</title>
+<style>
+  :root { --bg: #f6f7f9; --card: #ffffff; --line: #e3e6ea; --text: #1d2330; --muted: #6b7380; --accent: #2f6fed; }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; background: var(--bg); color: var(--text);
+         font-family: "Malgun Gothic", "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  header { padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--card);
+           display: flex; align-items: center; gap: 10px; }
+  .dot { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, #7aa7ff, #2f6fed); }
+  header h1 { font-size: 16px; margin: 0; font-weight: 700; }
+  header span { color: var(--muted); font-size: 13px; }
+  main { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 24px 24px; }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 12px 4px; }
+  .composer { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px 10px;
+              box-shadow: 0 6px 24px rgba(20, 30, 60, .06); }
+  textarea { width: 100%; height: 190px; border: 0; outline: 0; resize: none; font: inherit; font-size: 15px;
+             line-height: 1.6; color: var(--text); background: transparent; }
+  .bar { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+  .bar small { color: var(--muted); }
+  button { background: var(--accent); color: white; border: 0; border-radius: 10px; padding: 8px 18px;
+           font: inherit; font-size: 14px; font-weight: 700; }
+</style>
+</head>
+<body>
+<header><div class="dot"></div><h1>새 대화</h1><span>AI 어시스턴트</span></header>
+<main>
+  <p class="hint">무엇을 도와드릴까요?</p>
+  <div class="composer">
+    <textarea id="prompt" placeholder="프롬프트를 입력하세요"></textarea>
+    <div class="bar"><small id="count">0자</small><button>보내기</button></div>
+  </div>
+</main>
+<script>
+  const box = document.getElementById("prompt");
+  box.addEventListener("input", () => { document.getElementById("count").textContent = box.value.length + "자"; });
+</script>
+</body>
+</html>

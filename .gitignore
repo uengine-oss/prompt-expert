@@ -1,0 +1,12 @@
+.venv/
+.venv-mac/
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+.DS_Store
+e2e-output.txt
+e2e-result.json
+e2e-copypath-result.json
+demo-config.json
