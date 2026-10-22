@@ -149,6 +149,7 @@ def main():
     check = results["checks"]
     work = Path(tempfile.mkdtemp(prefix="winwhisper-e2e-"))
     mirror = work / "target.txt"
+    previous_clipboard = win32.get_clipboard_text()
     win32.set_clipboard_text(SENTINEL_CLIP, keep_out_of_history=False)
 
     app = AppProcess(Path(args.wav).resolve(), args.model, work, args.app_exe)
@@ -158,6 +159,8 @@ def main():
         check["model_loaded"] = bool(wait_for(lambda: app.saw("model ready"), 900, 1))
         wait_for(lambda: foreground_title() == "prompt-expert E2E target", 15)
         check["target_focused"] = foreground_title() == "prompt-expert E2E target"
+        if not check["model_loaded"] or not check["target_focused"]:
+            raise RuntimeError("Model or test window is not ready; refusing to send keys")
 
         # 1. a quick tap of Alt must not dictate anything
         hold_alt(0.1)
@@ -199,7 +202,8 @@ def main():
         for proc in (target, notepad):
             if proc:
                 proc.kill()
-        subprocess.run(["taskkill", "/IM", "Notepad.exe", "/F"], capture_output=True)
+        if previous_clipboard is not None:
+            win32.set_clipboard_text(previous_clipboard)
         results["passed"] = all(check.values())
         Path(args.result).write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(results, ensure_ascii=False, indent=2))

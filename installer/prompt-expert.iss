@@ -38,13 +38,13 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 korean.Overlay=녹음 중 화면에 애니메이션 표시 (MacWhisper처럼 파형이 움직이는 작은 창)
 korean.CopyPath=탐색기 우클릭 메뉴에 Copy Path / Recent Paths / Open Paths 추가
 korean.Autostart=Windows 시작 시 자동 실행
-korean.SmallModel=가벼운 모델 사용 (small, 느린 PC 권장 - 기본은 large-v3-turbo)
+korean.SmallModel=항상 가벼운 모델 사용 (small, 기본은 GPU: large-v3-turbo / CPU: small)
 korean.Options=추가 옵션:
 korean.LaunchNow=prompt-expert 실행
 english.Overlay=Show a recording animation on screen (live waveform pill, like MacWhisper)
 english.CopyPath=Add Copy Path / Recent Paths / Open Paths to the Explorer right-click menu
 english.Autostart=Start prompt-expert when Windows starts
-english.SmallModel=Use the lighter model (small, for slower PCs - default is large-v3-turbo)
+english.SmallModel=Always use small (default: large-v3-turbo on GPU / small on CPU)
 english.Options=Options:
 english.LaunchNow=Launch prompt-expert
 

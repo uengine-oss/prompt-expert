@@ -42,9 +42,13 @@ def pick_device(device, compute_type):
 
 class Transcriber:
     def __init__(self, model="large-v3-turbo", device="auto", compute_type="auto",
-                 language="auto", initial_prompt="", beam_size=5):
-        self.model_name = model
+                 language="auto", initial_prompt="", beam_size=1, cpu_model="small"):
         self.device, self.compute_type = pick_device(device, compute_type)
+        # The old default takes tens of seconds per short utterance on CPU.
+        # Keep explicit CPU/model choices, but make automatic selection usable
+        # on Windows PCs without CUDA (including existing default configs).
+        self.model_name = (cpu_model if device == "auto" and self.device == "cpu"
+                           and model == "large-v3-turbo" and cpu_model else model)
         self.language = None if language in (None, "", "auto") else language
         self.initial_prompt = initial_prompt or None
         self.beam_size = beam_size

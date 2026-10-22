@@ -64,7 +64,13 @@ class Inserter:
         self.method = method
         self.restore_clipboard = restore_clipboard
 
-    def insert(self, text):
+    def insert(self, text, target=None):
+        # A second Alt hold (or Ctrl/Shift) must not turn Ctrl+V into a shortcut.
+        # Retain the result on the clipboard if the target can no longer accept it.
+        if not win32.wait_for_modifiers_released() or (
+                target is not None and win32.foreground_window() != target):
+            win32.set_clipboard_text(text)
+            raise RuntimeError("입력창이 바뀌었거나 단축키가 눌려 있습니다. 받아쓴 내용을 Ctrl+V로 붙여넣으세요.")
         if win32.foreground_in_menu_mode():
             log.info("target window is in menu mode; leaving it before inserting")
             win32.leave_menu_mode()
@@ -88,7 +94,8 @@ class DictationApp(HoldListener):
             device=config["input_device"], max_seconds=config["max_record_seconds"])
         self.transcriber = Transcriber(
             model=config["model"], device=config["device"], compute_type=config["compute_type"],
-            language=config["language"], initial_prompt=config["initial_prompt"])
+            language=config["language"], initial_prompt=config["initial_prompt"],
+            beam_size=config.get("beam_size", 1), cpu_model=config.get("cpu_model", "small"))
         self.inserter = Inserter(config["paste_method"], config["restore_clipboard"])
         self.sounds = Sounds(config["sounds"])
         self.detector = HoldDetector(parse_hotkey(config["hotkey"]), config["min_hold_seconds"], self)
@@ -103,6 +110,8 @@ class DictationApp(HoldListener):
         self._control = queue.Queue()
         self._jobs = queue.Queue()
         self._recording = False
+        self._processing = threading.Event()
+        self._target = None
 
     def set_overlay(self, enabled):
         if enabled and self.overlay is None:
@@ -137,9 +146,15 @@ class DictationApp(HoldListener):
             command = self._control.get()
             try:
                 if command == "start":
+                    if self._processing.is_set():
+                        log.info("ignoring hold while previous dictation is processing")
+                        continue
+                    self._target = win32.foreground_window()
                     self.recorder.start()
                     self._recording = True
                 elif command == "confirm":
+                    if not self._recording:
+                        continue
                     win32.tap_mask_key()
                     self.sounds.start()
                     self._set_status("recording")
@@ -148,10 +163,11 @@ class DictationApp(HoldListener):
                     samples = self.recorder.stop()
                     self._recording = False
                     if command == "finish":
+                        self._processing.set()
                         self.sounds.stop()
                         self._set_status("busy")
                         self._show("busy")
-                        self._jobs.put(samples)
+                        self._jobs.put((samples, self._target))
                     else:
                         self._set_status("idle")
                         self._show("idle")
@@ -163,7 +179,8 @@ class DictationApp(HoldListener):
 
     def _job_loop(self):
         while True:
-            samples = self._jobs.get()
+            samples, target = self._jobs.get()
+            failed = False
             try:
                 if self.transcriber.model is None:
                     # First run downloads the model; say so instead of looking stuck.
@@ -176,20 +193,30 @@ class DictationApp(HoldListener):
                 log.info("transcribed %.1fs of audio in %.1fs: %r",
                          len(samples) / 16000, time.perf_counter() - started, text)
                 if text:
-                    self.inserter.insert(text)
+                    self.inserter.insert(text, target)
+                    log.info("text inserted into target window")
                     if self.on_text:
                         self.on_text(text)
-            except Exception:
+            except Exception as error:
+                failed = True
                 log.exception("transcription failed")
-            if self._jobs.empty():
+                if self.tray:
+                    try:
+                        self.tray.icon.notify(str(error), "받아쓰기 오류")
+                    except Exception:
+                        log.exception("could not show error notification")
+            finally:
                 self._show("idle")
-                self._set_status("idle" if self.transcriber.model else "loading")
+                self._set_status("error" if failed else "idle")
+                self._processing.clear()
+                self._jobs.task_done()
 
     def _load_model(self):
         self._set_status("loading")
         try:
             self.transcriber.load()
-            self._set_status("idle")
+            if not self._recording and not self._processing.is_set():
+                self._set_status("idle")
         except Exception:
             log.exception("could not load model")
             self._set_status("error")

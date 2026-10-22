@@ -78,6 +78,9 @@ user32.GetMessageW.argtypes = (ctypes.POINTER(wintypes.MSG), wintypes.HWND, wint
 user32.PostThreadMessageW.argtypes = (wintypes.DWORD, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
 user32.SendInput.argtypes = (wintypes.UINT, ctypes.POINTER(INPUT), ctypes.c_int)
 user32.SendInput.restype = wintypes.UINT
+user32.GetForegroundWindow.restype = wintypes.HWND
+user32.GetAsyncKeyState.argtypes = (ctypes.c_int,)
+user32.GetAsyncKeyState.restype = ctypes.c_short
 user32.OpenClipboard.argtypes = (wintypes.HWND,)
 user32.GetClipboardData.argtypes = (wintypes.UINT,)
 user32.GetClipboardData.restype = wintypes.HANDLE
@@ -209,6 +212,20 @@ def press_ctrl_v():
         _key_input(VK_V, flags=KEYEVENTF_KEYUP),
         _key_input(VK_CONTROL, flags=KEYEVENTF_KEYUP),
     ])
+
+
+def foreground_window():
+    return user32.GetForegroundWindow()
+
+
+def wait_for_modifiers_released(timeout=5.0):
+    deadline = time.monotonic() + timeout
+    while any(user32.GetAsyncKeyState(vk) & 0x8000
+              for vk in (0x10, 0x11, 0x12, 0x5B, 0x5C)):
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.02)
+    return True
 
 
 def type_unicode(text):

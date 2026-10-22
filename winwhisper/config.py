@@ -10,6 +10,8 @@ DEFAULTS = {
     "model": "large-v3-turbo",
     "device": "auto",
     "compute_type": "auto",
+    "cpu_model": "small",
+    "beam_size": 1,
     "language": "auto",
     "initial_prompt": "",
     "paste_method": "clipboard",

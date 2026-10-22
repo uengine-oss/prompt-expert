@@ -71,7 +71,8 @@ def main():
         from .audio import read_wav
         from .transcriber import Transcriber
         transcriber = Transcriber(config["model"], config["device"], config["compute_type"],
-                                  config["language"], config["initial_prompt"])
+                                  config["language"], config["initial_prompt"],
+                                  beam_size=config["beam_size"], cpu_model=config["cpu_model"])
         print(transcriber.transcribe(read_wav(args.transcribe)))
         return
 
